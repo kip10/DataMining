@@ -100,48 +100,61 @@ namespace makeDatabase
 
         static void insertWeather()
         {
-            List<string[]> stringArrs = new List<string[]>();
-            for (int i = 1951; i < 1955; i++)
+            List<string> stations = new List<string>();
+            MySqlCommand cmd = new MySqlCommand("SELECT USAF FROM climate.stations WHERE state = 'OH'", conn);
+            conn.Open();
+            MySqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
             {
-                stringArrs.Add(System.IO.Directory.GetFiles("Y:\\gsod\\" + i));
+                stations.Add(reader.GetString(0));
             }
+            conn.Close();
+
+            List<string> stringArrs = new List<string>();
+            for (int i = 1929; i < 1980; i++)
+            {
+                Console.WriteLine("Now on year: " + i.ToString());
+                string[] files = System.IO.Directory.GetFiles("Y:\\gsod\\" + i);
+                foreach (string file in files)
+                {
+                    string stationID = file.Substring(13,6);
+                   // int year = Convert.ToInt32(file.Substring(26, 4));
+                    if(stations.Contains(stationID))
+                        stringArrs.Add(file);
+                }
+            }
+
+            Console.WriteLine("Total of " + stringArrs.Count + " files for Ohio found.");
 
             int c = -1;
             int j = 0;
-            foreach (string[] files in stringArrs)
+            foreach (string files in stringArrs)
             {
                 Console.Clear();
                 c++;
-                foreach (string file in files)
+                if (c < 65)
                 {
-                    if (c == 0)
-                    {
-                        if (j < 1300)
-                        {
-                            j++;
-                        }
-                        else
-                        {
-                            writeLine(files, file);
-                        }
-                    }
-                    else
-                    {
-                        writeLine(files, file);
-                    }
+                    c++;
                 }
+                else
+                {
+                    Console.WriteLine(files + " :: " + c.ToString() + " out of 1032");
+                    writeLine(files);
+                }
+                
             }
         }
 
-        static void writeLine(string[] files, string file)
+        static void writeLine(string files)
         {
-            Console.WriteLine("File " + Array.IndexOf(files, file).ToString() + " out of " + files.Length);
+            //Console.WriteLine("File " + Array.IndexOf(files, file).ToString() + " out of " + files.Length);
             //Console.WriteLine(file);
             //Console.WriteLine(files.)
-            System.IO.StreamReader reader = new System.IO.StreamReader(file);
+            System.IO.StreamReader reader = new System.IO.StreamReader(files);
             reader.ReadLine();
 
-            MySqlCommand cmd = new MySqlCommand("INSERT INTO `climate`.`weather` (`station`,`wban`,`year`,`month`,`day`,`temperature`,`tempCount`,`dewPoint`,`dewPointCount`,`SLP`,`SLPCount`,"
+            MySqlCommand cmd = new MySqlCommand("INSERT INTO `climate`.`ohweather` (`station`,`wban`,`year`,`month`,`day`,`temperature`,`tempCount`,`dewPoint`,`dewPointCount`,`SLP`,`SLPCount`,"
                 + "`STP`,`STPCount`,`VISIB`,`VISIBCount`,`WDSP`,`WDSPCount`,`MXSPD`,`GUST`,`MAX`,`MIN`,`PRCP`,`SNDP`,`fog`,`rain`,`snow`,`hail`,`thunder`,`tornado`) VALUES "
                 + "(@station,@wban,@year,@month,@day,@temp,@tempCount,@dp,@dpc,@slp,@slpc,@stp,@stpc,@vis,@visc,@wdsp,@wdspc,@mxspd,@gust,@max,@min,@prcp,@sndp,@fog,@rain,@snow,@hail,@thunder,@tornado);", conn);
 
